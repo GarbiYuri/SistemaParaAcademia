@@ -2,6 +2,7 @@
 ## Integrantes da equipe:
   - Francisco Yuri Garbi
   - Miguel Souza Silva
+<br>
 ##Tema: SistemaParaAcademia 
 ##Objetivo do sistema:
 ##Tecnologias que serão utilizadas:
