@@ -14,7 +14,7 @@
   - Banco de Dados (Mysql)
 
 ## Breve descrição do funcionamento do sistema:
-O Sistema terá 4 telas iniciais:
+O Sistema terá 4 telas principais que ditam seu funcionamento:
   
   * Tela Aluno:
       - Nesta Tela o aluno acessa seu treino e pode imprimir para usá-lo, além de gerenciar seus pagamentos e/ou check-in (caso de GymPass/TotalPass). Os alunos terão seus logins criados no momento de inscrição. E alterar informações como foto de perfil, nome, forma de pagamento, etc.
