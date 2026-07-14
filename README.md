@@ -1,5 +1,5 @@
 # SistemaParaAcademia
-##Integrantes da equipe:
+## Integrantes da equipe:
   - Francisco Yuri Garbi
   - Miguel Souza Silva
 ##Tema: SistemaParaAcademia 
