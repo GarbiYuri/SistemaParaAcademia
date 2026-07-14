@@ -29,5 +29,12 @@ O Sistema terá 4 telas principais que ditam seu funcionamento:
       - Cada funcionário terá um login, nessa tela ele pode gerenciar seu banco de horas, ver seus horários, seus dados para receber salário, seu cargo, suas funções, não podendo alterar ou excluir nada, mas acessar seus históricos.
 
 ## Requisitos Funcionais (RF);
+  - Cadastrar Clientes e Funcionários
+  - Armazenar informações pertinentes, como ficha treino, salários e cargos
+  - Lugar para fazer pagamentos digitalmente
 
+  
 ## Requisitos Não Funcionais (RNF).
+  - Montar um Histórico baseado em tempo de Treinos, salários recebidos, cargos dados, criação de contas, etc
+  - Sistema deve enviar automaticamente via email um parabéns no aniversário dos Alunos
+  - 
