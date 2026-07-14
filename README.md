@@ -26,7 +26,7 @@ O Sistema terá 4 telas principais que ditam seu funcionamento:
       - Essa tela será acessada pela recepção ou gerentes, que podem assim, alterar informações de todos os logins, tanto funcionários quanto de alunos, além disso, poderá acessar históricos de pagamentos, alterar formas de pagamentos de um cliente especifico, liberar a catraca para alguém, criar novos alunos, editar e excluir. Ele pode também gerenciar funcionários, alterar funções, cargos, salário (com senha de administrador)
       
   * Tela Funcionário:
-      - Cada funcionário terá um login, nessa tela ele pode gerenciar seu banco de horas, ver seus horários, seus dados para receber salário, seu cargo, suas funções, não podendo alterar ou excluir nada, mas acessar seus históricos de pagamentos, cargos
+      - Cada funcionário terá um login, nessa tela ele pode gerenciar seu banco de horas, ver seus horários, seus dados para receber salário, seu cargo, suas funções, não podendo alterar ou excluir nada, mas acessar seus históricos.
 
 ## Requisitos Funcionais (RF);
 
