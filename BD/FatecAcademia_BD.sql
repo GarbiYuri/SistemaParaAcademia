@@ -6,9 +6,6 @@ drop database if exists fatec_academia;
 create database fatec_academia character set utf8mb4 collate utf8mb4_unicode_ci;
 use fatec_academia;
 
--- ------------------------------------------------------------
--- endereco
--- ------------------------------------------------------------
 create table endereco (
     id_endereco int auto_increment primary key,
     pais varchar(150),
@@ -21,9 +18,6 @@ create table endereco (
     obs varchar(255)
 );
 
--- ------------------------------------------------------------
--- dados_academia
--- ------------------------------------------------------------
 create table dados_academia (
     id int auto_increment primary key,
     id_endereco int,
@@ -37,9 +31,6 @@ create table dados_academia (
         references endereco (id_endereco)
 );
 
--- ------------------------------------------------------------
--- plano
--- ------------------------------------------------------------
 create table plano (
     id_plano int auto_increment primary key,
     nome varchar(50) unique not null,
@@ -48,9 +39,6 @@ create table plano (
     status varchar(20) not null default 'Ativo'
 );
 
--- ------------------------------------------------------------
--- cargo
--- ------------------------------------------------------------
 create table cargo (
     id_cargo int auto_increment primary key,
     nome_cargo varchar(50) unique not null,
@@ -58,9 +46,6 @@ create table cargo (
     status varchar(20) not null default 'Ativo'
 );
 
--- ------------------------------------------------------------
--- responsavel
--- ------------------------------------------------------------
 create table responsavel (
     id_responsavel int auto_increment primary key,
     nome varchar(150) not null,
@@ -70,9 +55,6 @@ create table responsavel (
     email varchar(100)
 );
 
--- ------------------------------------------------------------
--- usuario (tabela base - heranca)
--- ------------------------------------------------------------
 create table usuario (
     id_usuario int auto_increment primary key,
     id_endereco int,
@@ -89,9 +71,6 @@ create table usuario (
         references endereco (id_endereco)
 );
 
--- ------------------------------------------------------------
--- aluno (especializacao de usuario)
--- ------------------------------------------------------------
 create table aluno (
     id_aluno int auto_increment primary key,
     id_usuario int unique not null,
@@ -108,9 +87,6 @@ create table aluno (
         references plano (id_plano)
 );
 
--- ------------------------------------------------------------
--- funcionario (especializacao de usuario)
--- ------------------------------------------------------------
 create table funcionario (
     id_funcionario int auto_increment primary key,
     id_usuario int unique not null,
@@ -125,9 +101,7 @@ create table funcionario (
         references responsavel (id_responsavel)
 );
 
--- ------------------------------------------------------------
--- registro_ponto
--- ------------------------------------------------------------
+
 create table registro_ponto (
     id_ponto int auto_increment primary key,
     id_funcionario int not null,
@@ -137,9 +111,6 @@ create table registro_ponto (
         references funcionario (id_funcionario)
 );
 
--- ------------------------------------------------------------
--- treino
--- ------------------------------------------------------------
 create table treino (
     id_treino int auto_increment primary key,
     id_aluno int not null,
@@ -154,18 +125,12 @@ create table treino (
         references funcionario (id_funcionario)
 );
 
--- ------------------------------------------------------------
--- exercicio
--- ------------------------------------------------------------
 create table exercicio (
     id_exercicio int auto_increment primary key,
     nome_exercicio varchar(100) unique not null,
     grupo_muscular varchar(50)
 );
 
--- ------------------------------------------------------------
--- exercicio_treino (tabela associativa n:n)
--- ------------------------------------------------------------
 create table exercicio_treino (
     id_exercicio_treino int auto_increment primary key,
     id_treino int not null,
@@ -182,9 +147,7 @@ create table exercicio_treino (
     constraint uq_treino_exercicio unique (id_treino, id_exercicio)
 );
 
--- ------------------------------------------------------------
--- forma_pagamento
--- ------------------------------------------------------------
+
 create table forma_pagamento (
     id_fpag int auto_increment primary key,
     tipo varchar(30) not null,
@@ -196,9 +159,6 @@ create table forma_pagamento (
     data_validade date null
 );
 
--- ------------------------------------------------------------
--- pagamento
--- ------------------------------------------------------------
 create table pagamento (
     id_pagamento int auto_increment primary key,
     id_forma_pagamento int not null,
@@ -213,9 +173,6 @@ create table pagamento (
         references aluno (id_aluno)
 );
 
--- ------------------------------------------------------------
--- banco
--- ------------------------------------------------------------
 create table banco (
     id_banco int auto_increment primary key,
     nome_banco varchar(100) not null,
@@ -232,9 +189,7 @@ create table banco (
     data_updated datetime not null default current_timestamp on update current_timestamp
 );
 
--- ------------------------------------------------------------
--- recebimento
--- ------------------------------------------------------------
+
 create table recebimento (
     id_recebimento int auto_increment primary key,
     id_pagamento int not null,
@@ -250,9 +205,6 @@ create table recebimento (
         references banco (id_banco)
 );
 
--- ------------------------------------------------------------
--- auditoria
--- ------------------------------------------------------------
 create table auditoria (
     id_auditoria int auto_increment primary key,
     id_usuario int not null,
@@ -270,11 +222,6 @@ create index idx_usuario_nome on usuario (nome);
 create index idx_treino_aluno on treino (id_aluno);
 create index idx_pagamento_aluno on pagamento (id_aluno);
 create index idx_ponto_funcionario_data on registro_ponto (id_funcionario, data_hora);
-
-
--- ============================================================
--- stored procedures
--- ============================================================
 
 delimiter $$
 
