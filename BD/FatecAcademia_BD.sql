@@ -1,8 +1,5 @@
 -- ============================================================
 -- fatec academia - script de criacao do banco de dados
--- baseado na wiki do projeto SistemaParaAcademia
--- correcoes aplicadas: cnpj (typo), hora_abertura/hora_fechamento
--- como TIME, id_plano em aluno, cpf_hash em responsavel
 -- ============================================================
 
 drop database if exists fatec_academia;
