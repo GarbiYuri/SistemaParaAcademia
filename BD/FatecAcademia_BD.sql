@@ -223,298 +223,159 @@ create index idx_treino_aluno on treino (id_aluno);
 create index idx_pagamento_aluno on pagamento (id_aluno);
 create index idx_ponto_funcionario_data on registro_ponto (id_funcionario, data_hora);
 
-delimiter $$
-
-create procedure sp_cadastrar_endereco(
-    in p_pais varchar(150),
-    in p_estado varchar(150),
-    in p_cidade varchar(150),
-    in p_bairro varchar(150),
-    in p_rua varchar(150),
-    in p_numero varchar(150),
-    in p_complemento varchar(150),
-    in p_obs varchar(255),
-    out p_id_endereco int
+DELIMITER $$
+CREATE PROCEDURE sp_cadastrar_aluno(
+    IN p_id_usuario INT,
+    IN p_id_responsavel INT,
+    IN p_id_plano INT,
+    IN p_forma_pagamento_preferida VARCHAR(50),
+    OUT p_id_aluno INT
 )
-begin
-    insert into endereco (pais, estado, cidade, bairro, rua, numero, complemento, obs)
-    values (p_pais, p_estado, p_cidade, p_bairro, p_rua, p_numero, p_complemento, p_obs);
+BEGIN
+    DECLARE v_idade INT;
+    DECLARE v_data_nascimento DATE;
+    DECLARE v_id_responsavel_final INT;
 
-    set p_id_endereco = last_insert_id();
-end $$
+    SELECT data_nascimento INTO v_data_nascimento
+    FROM usuario WHERE id_usuario = p_id_usuario;
 
-create procedure sp_cadastrar_usuario(
-    in p_id_endereco int,
-    in p_nome varchar(150),
-    in p_cpf varchar(255),
-    in p_cpf_hash char(64),
-    in p_email varchar(100),
-    in p_senha varchar(255),
-    in p_data_nascimento date,
-    out p_id_usuario int
+    SET v_idade = TIMESTAMPDIFF(YEAR, v_data_nascimento, CURDATE());
+
+    IF v_idade < 18 THEN
+        IF p_id_responsavel IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Aluno menor de idade exige um responsável legal vinculado';
+        END IF;
+        SET v_id_responsavel_final = p_id_responsavel;
+    ELSE
+        SET v_id_responsavel_final = NULL;
+    END IF;
+
+    INSERT INTO aluno (id_usuario, id_responsavel, id_plano, forma_pagamento_preferida, status_matricula)
+    VALUES (p_id_usuario, v_id_responsavel_final, p_id_plano, p_forma_pagamento_preferida, 'Ativo');
+
+    SET p_id_aluno = LAST_INSERT_ID();
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_registrar_pagamento(
+    IN p_id_forma_pagamento INT,
+    IN p_id_aluno INT,
+    IN p_valor DECIMAL(10,2),
+    IN p_status VARCHAR(20),
+    OUT p_id_pagamento INT
 )
-begin
-    insert into usuario (id_endereco, nome, cpf, cpf_hash, email, senha, data_nascimento)
-    values (p_id_endereco, p_nome, p_cpf, p_cpf_hash, p_email, p_senha, p_data_nascimento);
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
 
-    set p_id_usuario = last_insert_id();
-end $$
+    START TRANSACTION;
 
-create procedure sp_cadastrar_responsavel(
-    in p_nome varchar(150),
-    in p_cpf varchar(255),
-    in p_cpf_hash char(64),
-    in p_telefone varchar(20),
-    in p_email varchar(100),
-    out p_id_responsavel int
+    INSERT INTO pagamento (id_forma_pagamento, id_aluno, valor, status)
+    VALUES (p_id_forma_pagamento, p_id_aluno, p_valor, p_status);
+
+    SET p_id_pagamento = LAST_INSERT_ID();
+
+    IF p_status = 'Pago' THEN
+        UPDATE aluno
+        SET data_vencimento = DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        WHERE id_aluno = p_id_aluno;
+    END IF;
+
+    COMMIT;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_validar_acesso_catraca(
+    IN p_id_aluno INT,
+    OUT p_acesso_liberado BOOLEAN,
+    OUT p_motivo VARCHAR(100)
 )
-begin
-    insert into responsavel (nome, cpf, cpf_hash, telefone, email)
-    values (p_nome, p_cpf, p_cpf_hash, p_telefone, p_email);
+BEGIN
+    DECLARE v_status VARCHAR(20);
+    DECLARE v_vencimento DATE;
 
-    set p_id_responsavel = last_insert_id();
-end $$
+    SELECT status_matricula, data_vencimento
+    INTO v_status, v_vencimento
+    FROM aluno
+    WHERE id_aluno = p_id_aluno;
 
-create procedure sp_cadastrar_aluno(
-    in p_id_usuario int,
-    in p_id_responsavel int,
-    in p_id_plano int,
-    in p_forma_pagamento_preferida varchar(50),
-    out p_id_aluno int
+    IF v_status IS NULL THEN
+        SET p_acesso_liberado = FALSE;
+        SET p_motivo = 'Aluno não encontrado';
+    ELSEIF v_status <> 'Ativo' THEN
+        SET p_acesso_liberado = FALSE;
+        SET p_motivo = CONCAT('Matrícula com status ', v_status);
+    ELSEIF v_vencimento IS NULL OR v_vencimento < CURDATE() THEN
+        SET p_acesso_liberado = FALSE;
+        SET p_motivo = 'Pagamento vencido ou não localizado';
+    ELSE
+        SET p_acesso_liberado = TRUE;
+        SET p_motivo = 'Acesso liberado';
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_criar_treino(
+    IN p_id_aluno INT,
+    IN p_id_professor INT,
+    IN p_nome_treino VARCHAR(100),
+    OUT p_id_treino INT
 )
-begin
-    declare v_idade int;
-    declare v_data_nascimento date;
-    declare v_id_responsavel_final int;
+BEGIN
+    DECLARE v_nome_cargo VARCHAR(50);
 
-    select data_nascimento into v_data_nascimento
-    from usuario where id_usuario = p_id_usuario;
+    SELECT c.nome_cargo INTO v_nome_cargo
+    FROM funcionario f
+    JOIN cargo c ON c.id_cargo = f.id_cargo
+    WHERE f.id_funcionario = p_id_professor;
 
-    set v_idade = timestampdiff(year, v_data_nascimento, curdate());
+    IF v_nome_cargo IS NULL OR v_nome_cargo NOT IN ('Professor', 'Instrutor') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Somente professores ou instrutores podem criar fichas de treino';
+    END IF;
 
-    if v_idade < 18 then
-        if p_id_responsavel is null then
-            signal sqlstate '45000'
-                set message_text = 'aluno menor de idade exige um responsavel legal vinculado';
-        end if;
-        set v_id_responsavel_final = p_id_responsavel;
-    else
-        set v_id_responsavel_final = null;
-    end if;
+    INSERT INTO treino (id_aluno, id_professor, nome_treino, data_criacao, status)
+    VALUES (p_id_aluno, p_id_professor, p_nome_treino, CURDATE(), 'Ativo');
 
-    insert into aluno (id_usuario, id_responsavel, id_plano, forma_pagamento_preferida, status_matricula)
-    values (p_id_usuario, v_id_responsavel_final, p_id_plano, p_forma_pagamento_preferida, 'Ativo');
+    SET p_id_treino = LAST_INSERT_ID();
+END $$
+DELIMITER ;
 
-    set p_id_aluno = last_insert_id();
-end $$
-
-create procedure sp_cadastrar_funcionario(
-    in p_id_usuario int,
-    in p_id_cargo int,
-    in p_id_responsavel int,
-    in p_valor_hora decimal(10,2),
-    out p_id_funcionario int
+DELIMITER $$
+CREATE PROCEDURE sp_atualizar_status_matricula(
+    IN p_id_aluno INT,
+    IN p_status VARCHAR(20)
 )
-begin
-    declare v_idade int;
-    declare v_data_nascimento date;
-    declare v_id_responsavel_final int;
+BEGIN
+    UPDATE aluno
+    SET status_matricula = p_status
+    WHERE id_aluno = p_id_aluno;
+END $$
+DELIMITER ;
 
-    select data_nascimento into v_data_nascimento
-    from usuario where id_usuario = p_id_usuario;
-
-    set v_idade = timestampdiff(year, v_data_nascimento, curdate());
-
-    if v_idade < 18 then
-        if p_id_responsavel is null then
-            signal sqlstate '45000'
-                set message_text = 'funcionario menor de idade exige um responsavel legal vinculado';
-        end if;
-        set v_id_responsavel_final = p_id_responsavel;
-    else
-        set v_id_responsavel_final = null;
-    end if;
-
-    insert into funcionario (id_usuario, id_cargo, id_responsavel, valor_hora)
-    values (p_id_usuario, p_id_cargo, v_id_responsavel_final, p_valor_hora);
-
-    set p_id_funcionario = last_insert_id();
-end $$
-
-create procedure sp_atualizar_status_matricula(
-    in p_id_aluno int,
-    in p_status varchar(20)
+DELIMITER $$
+CREATE PROCEDURE sp_excluir_exercicio(
+    IN p_id_exercicio INT
 )
-begin
-    update aluno
-    set status_matricula = p_status
-    where id_aluno = p_id_aluno;
-end $$
+BEGIN
+    DELETE FROM exercicio
+    WHERE id_exercicio = p_id_exercicio;
+END $$
+DELIMITER ;
 
-create procedure sp_registrar_ponto(
-    in p_id_funcionario int,
-    in p_tipo_batida varchar(30),
-    out p_id_ponto int
+DELIMITER $$
+CREATE PROCEDURE sp_listar_treino_aluno(
+    IN p_id_aluno INT
 )
-begin
-    declare v_ultima_entrada datetime;
-
-    if p_tipo_batida = 'Saida' then
-        select max(data_hora) into v_ultima_entrada
-        from registro_ponto
-        where id_funcionario = p_id_funcionario
-          and tipo_batida = 'Entrada';
-
-        if v_ultima_entrada is not null and now() < v_ultima_entrada then
-            signal sqlstate '45000'
-                set message_text = 'horario de saida nao pode ser anterior ao horario de entrada';
-        end if;
-    end if;
-
-    insert into registro_ponto (id_funcionario, data_hora, tipo_batida)
-    values (p_id_funcionario, now(), p_tipo_batida);
-
-    set p_id_ponto = last_insert_id();
-end $$
-
-create procedure sp_criar_treino(
-    in p_id_aluno int,
-    in p_id_professor int,
-    in p_nome_treino varchar(100),
-    out p_id_treino int
-)
-begin
-    declare v_nome_cargo varchar(50);
-
-    select c.nome_cargo into v_nome_cargo
-    from funcionario f
-    join cargo c on c.id_cargo = f.id_cargo
-    where f.id_funcionario = p_id_professor;
-
-    if v_nome_cargo is null or v_nome_cargo not in ('Professor', 'Instrutor') then
-        signal sqlstate '45000'
-            set message_text = 'somente professores ou instrutores podem criar fichas de treino';
-    end if;
-
-    insert into treino (id_aluno, id_professor, nome_treino, data_criacao, status)
-    values (p_id_aluno, p_id_professor, p_nome_treino, curdate(), 'Ativo');
-
-    set p_id_treino = last_insert_id();
-end $$
-
-create procedure sp_adicionar_exercicio_treino(
-    in p_id_treino int,
-    in p_id_exercicio int,
-    in p_series int,
-    in p_repeticoes int,
-    in p_carga decimal(6,2),
-    in p_unidade_carga varchar(10),
-    in p_observacao varchar(255)
-)
-begin
-    insert into exercicio_treino
-        (id_treino, id_exercicio, series, repeticoes, carga, unidade_carga, observacao)
-    values
-        (p_id_treino, p_id_exercicio, p_series, p_repeticoes, p_carga, p_unidade_carga, p_observacao);
-
-    update treino
-    set data_atualizacao = curdate()
-    where id_treino = p_id_treino;
-end $$
-
-create procedure sp_registrar_pagamento(
-    in p_id_forma_pagamento int,
-    in p_id_aluno int,
-    in p_valor decimal(10,2),
-    in p_status varchar(20),
-    out p_id_pagamento int
-)
-begin
-    declare exit handler for sqlexception
-    begin
-        rollback;
-        resignal;
-    end;
-
-    start transaction;
-
-    insert into pagamento (id_forma_pagamento, id_aluno, valor, status)
-    values (p_id_forma_pagamento, p_id_aluno, p_valor, p_status);
-
-    set p_id_pagamento = last_insert_id();
-
-    if p_status = 'Pago' then
-        update aluno
-        set data_vencimento = date_add(curdate(), interval 30 day)
-        where id_aluno = p_id_aluno;
-    end if;
-
-    commit;
-end $$
-
-create procedure sp_registrar_recebimento(
-    in p_id_pagamento int,
-    in p_id_banco int,
-    in p_nome_acad varchar(150),
-    in p_valor_recebido decimal(10,2),
-    in p_status varchar(20),
-    out p_id_recebimento int
-)
-begin
-    insert into recebimento
-        (id_pagamento, id_banco, nome_acad, valor_recebido, status)
-    values
-        (p_id_pagamento, p_id_banco, p_nome_acad, p_valor_recebido, p_status);
-
-    set p_id_recebimento = last_insert_id();
-end $$
-
-create procedure sp_validar_acesso_catraca(
-    in p_id_aluno int,
-    out p_acesso_liberado boolean,
-    out p_motivo varchar(100)
-)
-begin
-    declare v_status varchar(20);
-    declare v_vencimento date;
-
-    select status_matricula, data_vencimento
-    into v_status, v_vencimento
-    from aluno
-    where id_aluno = p_id_aluno;
-
-    if v_status is null then
-        set p_acesso_liberado = false;
-        set p_motivo = 'aluno nao encontrado';
-    elseif v_status <> 'Ativo' then
-        set p_acesso_liberado = false;
-        set p_motivo = concat('matricula com status ', v_status);
-    elseif v_vencimento is null or v_vencimento < curdate() then
-        set p_acesso_liberado = false;
-        set p_motivo = 'pagamento vencido ou nao localizado';
-    else
-        set p_acesso_liberado = true;
-        set p_motivo = 'acesso liberado';
-    end if;
-end $$
-
-create procedure sp_registrar_auditoria(
-    in p_id_usuario int,
-    in p_acao varchar(100),
-    in p_tabela_afetada varchar(100),
-    in p_ip varchar(45),
-    in p_detalhes text
-)
-begin
-    insert into auditoria (id_usuario, acao, tabela_afetada, ip, detalhes)
-    values (p_id_usuario, p_acao, p_tabela_afetada, p_ip, p_detalhes);
-end $$
-
-create procedure sp_listar_treino_aluno(
-    in p_id_aluno int
-)
-begin
-    select
+BEGIN
+    SELECT 
         t.id_treino,
         t.nome_treino,
         t.status,
@@ -525,12 +386,63 @@ begin
         et.carga,
         et.unidade_carga,
         et.observacao
-    from treino t
-    join exercicio_treino et on et.id_treino = t.id_treino
-    join exercicio e on e.id_exercicio = et.id_exercicio
-    where t.id_aluno = p_id_aluno
-      and t.status = 'Ativo'
-    order by t.data_criacao desc;
-end $$
+    FROM treino t
+    JOIN exercicio_treino et ON et.id_treino = t.id_treino
+    JOIN exercicio e ON e.id_exercicio = et.id_exercicio
+    WHERE t.id_aluno = p_id_aluno
+      AND t.status = 'Ativo'
+    ORDER BY t.data_criacao DESC;
+END $$
+DELIMITER ;
 
-delimiter ;
+DELIMITER $$
+CREATE PROCEDURE sp_filtrar_pagamentos_por_periodo(
+    IN p_data_inicio DATETIME,
+    IN p_data_fim DATETIME
+)
+BEGIN
+    SELECT id_pagamento, id_aluno, valor, data_pagamento, status
+    FROM pagamento
+    WHERE data_pagamento BETWEEN p_data_inicio AND p_data_fim;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_registrar_ponto(
+    IN p_id_funcionario INT,
+    IN p_tipo_batida VARCHAR(30),
+    OUT p_id_ponto INT
+)
+BEGIN
+    DECLARE v_ultima_entrada DATETIME;
+
+    IF p_tipo_batida = 'Saida' THEN
+        SELECT MAX(data_hora) INTO v_ultima_entrada
+        FROM registro_ponto
+        WHERE id_funcionario = p_id_funcionario
+          AND tipo_batida = 'Entrada';
+
+        IF v_ultima_entrada IS NOT NULL AND NOW() < v_ultima_entrada THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Horário de saída não pode ser anterior ao horário de entrada';
+        END IF;
+    END IF;
+
+    INSERT INTO registro_ponto (id_funcionario, data_hora, tipo_batida)
+    VALUES (p_id_funcionario, NOW(), p_tipo_batida);
+
+    SET p_id_ponto = LAST_INSERT_ID();
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_atualizar_salario_cargo(
+    IN p_id_cargo INT,
+    IN p_novo_salario DECIMAL(10,2)
+)
+BEGIN
+    UPDATE cargo
+    SET salario_base = p_novo_salario
+    WHERE id_cargo = p_id_cargo;
+END $$
+DELIMITER ;
