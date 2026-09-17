@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#FastApi Core
+
+SistemaParaAcademia/.venv/
+SistemaParaAcademia/.env
+SistemaParaAcademia/__pycache__/
+SistemaParaAcademia/*.pyc
