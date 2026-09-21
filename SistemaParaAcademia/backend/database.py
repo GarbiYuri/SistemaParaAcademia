@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def criar_conexao():
+def get_db():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -16,7 +16,7 @@ def criar_conexao():
 
 
 if __name__ == "__main__":
-    conexao = criar_conexao()
+    conexao = get_db()
 
     if conexao.is_connected():
         print("Conexão realizada com sucesso!")

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Administrador - FATEC Fit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --bg-base: #09090a; --bg-surface: #121214; --bg-card: #202024; --border-color: #29292e; --brand-green: #00b37e; }
+        body { background-color: var(--bg-base); color: #e1e1e6; font-family: system-ui, sans-serif; min-height: 100vh; }
+        .sidebar { background-color: var(--bg-surface); border-right: 1px solid var(--border-color); min-height: 100vh; }
+        .card-custom { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; }
+        .nav-link-custom { color: #8d8d99; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .nav-link-custom:hover, .nav-link-custom.active { color: #fff; background-color: var(--bg-card); border-left: 4px solid var(--brand-green); }
+        .table-dark-custom { --bs-table-bg: var(--bg-surface); --bs-table-border-color: var(--border-color); color: #e1e1e6; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Admin -->
+        <aside class="col-md-3 col-lg-2 sidebar p-3">
+            <div class="d-flex align-items-center gap-2 pb-3 mb-3 border-bottom border-secondary">
+                <i class="bi bi-shield-lock-fill text-success fs-3"></i>
+                <span class="fs-5 fw-bold text-light">FATEC FIT</span>
+            </div>
+            <div class="card-custom p-2 mb-3">
+                <small class="text-secondary d-block">Perfil Conectado:</small>
+                <strong id="user-name">Administrador</strong>
+                <span class="badge bg-danger d-block mt-1">ADMINISTRAÇÃO</span>
+            </div>
+            <nav class="nav flex-column mb-auto">
+                <a href="#" class="nav-link-custom active" onclick="carregarVisaoGeralAdmin()"><i class="bi bi-speedometer2"></i> Visão Geral</a>
+                <a href="#" class="nav-link-custom" onclick="carregarCargos()"><i class="bi bi-briefcase"></i> Cargos & Salários</a>
+                <a href="#" class="nav-link-custom" onclick="carregarAuditoria()"><i class="bi bi-journal-text"></i> Logs de Auditoria</a>
+                <a href="#" class="nav-link-custom" onclick="carregarPlanos()"><i class="bi bi-card-checklist"></i> Planos</a>
+            </nav>
+            <hr class="border-secondary my-3">
+            <button class="btn btn-outline-danger w-100" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Sair</button>
+        </aside>
+
+        <!-- Área Principal Admin -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <header class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary">
+                <div>
+                    <h3 id="admin-title" class="fw-bold mb-0">Gestão Administrativa</h3>
+                    <small id="admin-subtitle" class="text-secondary">Painel de controle financeiro e operacional</small>
+                </div>
+            </header>
+
+            <div id="admin-alert" class="alert alert-dismissible fade show d-none" role="alert">
+                <span id="admin-alert-text"></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.classList.add('d-none')"></button>
+            </div>
+
+            <section id="admin-content">
+                <!-- Conteúdo Injetado via JS / Rotas Admin -->
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Atualizar Salário (Procedure: sp_atualizar_salario_cargo) -->
+<div class="modal fade" id="modalSalario" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header">
+                <h5 class="modal-title">Atualizar Salário de Cargo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-salario" onsubmit="salvarNovoSalario(event)">
+                    <input type="hidden" id="salario-cargo-id">
+                    <div class="mb-3">
+                        <label class="form-label">Novo Salário Base (R$)</label>
+                        <input type="number" step="0.01" id="salario-valor" class="form-control bg-secondary text-light border-0" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Atualizar via Procedure</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API = window.location.origin;
+
+    async function carregarVisaoGeralAdmin() {
+        document.getElementById('admin-title').innerText = "Visão Geral";
+        const content = document.getElementById('admin-content');
+        
+        const [alunos, func, auditorias] = await Promise.all([
+            fetch(`${API}/alunos/`).then(r => r.json()),
+            fetch(`${API}/funcionarios/`).then(r => r.json()),
+            fetch(`${API}/auditorias/`).then(r => r.json())
+        ]);
+
+        content.innerHTML = `
+            <div class="row g-3 mb-4">
+                <div class="col-md-4"><div class="card-custom p-3 border-start border-4 border-success"><h5>Total Alunos</h5><h3>${alunos.length || 0}</h3></div></div>
+                <div class="col-md-4"><div class="card-custom p-3 border-start border-4 border-info"><h5>Funcionários</h5><h3>${func.length || 0}</h3></div></div>
+                <div class="col-md-4"><div class="card-custom p-3 border-start border-4 border-warning"><h5>Logs Auditoria</h5><h3>${auditorias.length || 0}</h3></div></div>
+            </div>
+        `;
+    }
+
+    async function carregarCargos() {
+        document.getElementById('admin-title').innerText = "Cargos & Salários";
+        const res = await fetch(`${API}/cargos/`);
+        const cargos = await res.json();
+        
+        let html = `
+            <div class="card-custom p-3"><table class="table table-dark-custom align-middle">
+            <thead><tr><th>ID</th><th>Cargo</th><th>Salário Base</th><th>Ações</th></tr></thead><tbody>`;
+        
+        cargos.forEach(c => {
+            html += `<tr><td>${c.id_cargo}</td><td>${c.nome_cargo}</td><td>R$ ${c.salario_base}</td>
+            <td><button class="btn btn-sm btn-outline-warning" onclick="abrirModalSalario(${c.id_cargo}, ${c.salario_base})">Ajustar Salário</button></td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        document.getElementById('admin-content').innerHTML = html;
+    }
+
+    async function carregarAuditoria() {
+        document.getElementById('admin-title').innerText = "Logs de Auditoria";
+        const res = await fetch(`${API}/auditorias/`);
+        const logs = await res.json();
+        
+        let html = `<div class="card-custom p-3"><table class="table table-dark-custom align-middle">
+            <thead><tr><th>ID</th><th>Usuário</th><th>Ação</th><th>Tabela</th><th>Data</th></tr></thead><tbody>`;
+        logs.forEach(l => {
+            html += `<tr><td>${l.id_auditoria}</td><td>${l.id_usuario || 'Sistema'}</td><td>${l.acao}</td><td>${l.tabela_afetada}</td><td>${l.data_hora || '---'}</td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        document.getElementById('admin-content').innerHTML = html;
+    }
+
+    function abrirModalSalario(id, salario) {
+        document.getElementById('salario-cargo-id').value = id;
+        document.getElementById('salario-valor').value = salario;
+        new bootstrap.Modal(document.getElementById('modalSalario')).show();
+    }
+
+    async function salvarNovoSalario(e) {
+        e.preventDefault();
+        const id = document.getElementById('salario-cargo-id').value;
+        const val = document.getElementById('salario-valor').value;
+        await fetch(`${API}/cargos/${id}/salario?novo_salario=${val}`, { method: 'PUT' });
+        bootstrap.Modal.getInstance(document.getElementById('modalSalario')).hide();
+        carregarCargos();
+    }
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+    window.onload = carregarVisaoGeralAdmin;
+</script>
+</body>
+</html>

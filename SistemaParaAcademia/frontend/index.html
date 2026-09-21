@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FATEC Academia - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-dark: #121214;
+            --card-bg: #202024;
+            --border-color: #323238;
+            --primary-green: #00875f;
+            --primary-green-hover: #00b37e;
+            --text-color: #e1e1e6;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card-login {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-green);
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-green-hover);
+        }
+
+        .form-control {
+            background-color: #121214 !important;
+            border-color: var(--border-color) !important;
+            color: #ffffff !important;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(0, 179, 126, 0.25);
+            border-color: var(--primary-green) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-login shadow-lg">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-success"><i class="bi bi-lightning-charge-fill"></i> FATEC Academia</h3>
+            <p class="text-secondary small">Entre com suas credenciais de acesso</p>
+        </div>
+
+        <div id="alert-message" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="form-login">
+            <div class="mb-3">
+                <label for="email" class="form-label">E-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark text-secondary border-secondary"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="email" placeholder="nome@exemplo.com" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="senha" class="form-label">Senha</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark text-secondary border-secondary"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="senha" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit" class="btn btn-primary w-100 py-2">
+                <span id="btn-text">Entrar no Sistema</span>
+                <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+        </form>
+    </div>
+
+    <script src="/frontend/js/login.js"></script>
+</body>
+</html>

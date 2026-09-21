@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepção - FATEC Fit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --bg-base: #09090a; --bg-surface: #121214; --bg-card: #202024; --border-color: #29292e; --brand-green: #00b37e; }
+        body { background-color: var(--bg-base); color: #e1e1e6; font-family: system-ui, sans-serif; min-height: 100vh; }
+        .sidebar { background-color: var(--bg-surface); border-right: 1px solid var(--border-color); min-height: 100vh; }
+        .card-custom { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; }
+        .nav-link-custom { color: #8d8d99; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .nav-link-custom:hover, .nav-link-custom.active { color: #fff; background-color: var(--bg-card); border-left: 4px solid var(--brand-green); }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Recepção -->
+        <aside class="col-md-3 col-lg-2 sidebar p-3">
+            <div class="d-flex align-items-center gap-2 pb-3 mb-3 border-bottom border-secondary">
+                <i class="bi bi-person-badge text-success fs-3"></i>
+                <span class="fs-5 fw-bold text-light">FATEC FIT</span>
+            </div>
+            <div class="card-custom p-2 mb-3">
+                <small class="text-secondary d-block">Atendente:</small>
+                <strong id="user-name">Recepcionista</strong>
+                <span class="badge bg-primary d-block mt-1">RECEPÇÃO</span>
+            </div>
+            <nav class="nav flex-column mb-auto">
+                <a href="#" class="nav-link-custom active" onclick="carregarCatraca()"><i class="bi bi-door-open"></i> Validação Catraca</a>
+                <a href="#" class="nav-link-custom" onclick="carregarNovoAluno()"><i class="bi bi-person-plus"></i> Matricular Aluno</a>
+                <a href="#" class="nav-link-custom" onclick="carregarPagamento()"><i class="bi bi-credit-card"></i> Registrar Pagamento</a>
+            </nav>
+            <hr class="border-secondary my-3">
+            <button class="btn btn-outline-warning w-100 mb-2" onclick="abrirModalPonto()"><i class="bi bi-clock-history"></i> Bater Ponto</button>
+            <button class="btn btn-outline-danger w-100" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Sair</button>
+        </aside>
+
+        <!-- Área Principal Recepção -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <header class="pb-3 mb-4 border-bottom border-secondary">
+                <h3 id="rec-title" class="fw-bold mb-0">Operações de Portaria e Atendimento</h3>
+            </header>
+
+            <section id="rec-content">
+                <!-- Conteúdo Injetado via JS -->
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Ponto Eletrônico -->
+<div class="modal fade" id="modalPonto" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header"><h5 class="modal-title">Ponto Eletrônico</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <form onsubmit="baterPonto(event)">
+                    <div class="mb-3"><label>ID Funcionário</label><input type="number" id="ponto-func-id" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3">
+                        <label>Tipo Batida</label>
+                        <select id="ponto-tipo" class="form-select bg-secondary text-light border-0">
+                            <option value="ENTRADA">Entrada</option>
+                            <option value="SAIDA">Saída</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">Registrar Batida</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API = window.location.origin;
+
+    function carregarCatraca() {
+        document.getElementById('rec-title').innerText = "Validação de Acesso em Catraca";
+        document.getElementById('rec-content').innerHTML = `
+            <div class="card-custom p-4 mb-4">
+                <div class="row g-2">
+                    <div class="col-md-9"><input type="number" id="catraca-id" class="form-control bg-secondary text-light border-0" placeholder="Informe o ID do Aluno..."></div>
+                    <div class="col-md-3"><button class="btn btn-success w-100" onclick="validarCatracaProcedure()">Validar (sp_validar_acesso_catraca)</button></div>
+                </div>
+            </div>
+            <div id="catraca-status"></div>
+        `;
+    }
+
+    async function validarCatracaProcedure() {
+        const id = document.getElementById('catraca-id').value;
+        const res = await fetch(`${API}/alunos/${id}/validar-catraca`);
+        const data = await res.json();
+        
+        const statusDiv = document.getElementById('catraca-status');
+        if (data.acesso_liberado) {
+            statusDiv.innerHTML = `<div class="alert alert-success p-4 text-center"><h4>LIBERADO</h4><p>${data.motivo}</p></div>`;
+        } else {
+            statusDiv.innerHTML = `<div class="alert alert-danger p-4 text-center"><h4>BLOQUEADO</h4><p>${data.motivo}</p></div>`;
+        }
+    }
+
+    function carregarNovoAluno() {
+        document.getElementById('rec-title').innerText = "Cadastrar Novo Aluno";
+        document.getElementById('rec-content').innerHTML = `
+            <div class="card-custom p-4 max-w-600 mx-auto">
+                <form onsubmit="cadastrarAlunoProcedure(event)">
+                    <div class="mb-3"><label>ID Usuário Já Criado</label><input type="number" id="a-id-user" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3"><label>ID Plano Escolhido</label><input type="number" id="a-id-plano" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3"><label>Forma PGTO Preferida</label><input type="text" id="a-forma-pgto" class="form-control bg-secondary text-light border-0" placeholder="Ex: Cartao / PIX" required></div>
+                    <button type="submit" class="btn btn-success w-100">Matricular Aluno (sp_cadastrar_aluno)</button>
+                </form>
+            </div>
+        `;
+    }
+
+    async function cadastrarAlunoProcedure(e) {
+        e.preventDefault();
+        const payload = {
+            id_usuario: parseInt(document.getElementById('a-id-user').value),
+            id_plano: parseInt(document.getElementById('a-id-plano').value),
+            forma_pagamento_preferida: document.getElementById('a-forma-pgto').value
+        };
+        const res = await fetch(`${API}/alunos/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) alert("Aluno Matriculado com Sucesso via Stored Procedure!");
+    }
+
+    function carregarPagamento() {
+        document.getElementById('rec-title').innerText = "Processar Pagamento de Mensalidade";
+        document.getElementById('rec-content').innerHTML = `
+            <div class="card-custom p-4 max-w-600 mx-auto">
+                <form onsubmit="registrarPagamentoProcedure(event)">
+                    <div class="mb-3"><label>ID Aluno</label><input type="number" id="p-id-aluno" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3"><label>ID Forma Pagamento</label><input type="number" id="p-id-fpag" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3"><label>Valor (R$)</label><input type="number" step="0.01" id="p-valor" class="form-control bg-secondary text-light border-0" required></div>
+                    <div class="mb-3"><label>Status</label>
+                        <select id="p-status" class="form-select bg-secondary text-light border-0">
+                            <option value="Pago">Pago</option>
+                            <option value="Pendente">Pendente</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Processar (sp_registrar_pagamento)</button>
+                </form>
+            </div>
+        `;
+    }
+
+    async function registrarPagamentoProcedure(e) {
+        e.preventDefault();
+        const payload = {
+            id_aluno: parseInt(document.getElementById('p-id-aluno').value),
+            id_forma_pagamento: parseInt(document.getElementById('p-id-fpag').value),
+            valor: parseFloat(document.getElementById('p-valor').value),
+            status: document.getElementById('p-status').value
+        };
+        const res = await fetch(`${API}/pagamentos/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) alert("Pagamento registrado e renovação processada via Procedure!");
+    }
+
+    function abrirModalPonto() { new bootstrap.Modal(document.getElementById('modalPonto')).show(); }
+    async function baterPonto(e) {
+        e.preventDefault();
+        const payload = { id_funcionario: parseInt(document.getElementById('ponto-func-id').value), tipo_batida: document.getElementById('ponto-tipo').value };
+        await fetch(`${API}/ponto/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        alert("Ponto registrado!");
+        bootstrap.Modal.getInstance(document.getElementById('modalPonto')).hide();
+    }
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+    window.onload = carregarCatraca;
+</script>
+</body>
+</html>
