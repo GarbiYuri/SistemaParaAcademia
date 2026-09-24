@@ -8,7 +8,7 @@ USE fatec_academia;
 
 
 -- =========================================================
--- TABELA: ENDERECO
+-- TABELA: endereco
 -- =========================================================
 
 CREATE TABLE endereco (
@@ -24,7 +24,7 @@ CREATE TABLE endereco (
 
 
 -- =========================================================
--- TABELA: DADOS_ACADEMIA
+-- TABELA: dados_academia
 -- =========================================================
 
 CREATE TABLE dados_academia (
@@ -44,7 +44,7 @@ CREATE TABLE dados_academia (
 
 
 -- =========================================================
--- TABELA: CARGO
+-- TABELA: cargo
 -- =========================================================
 
 CREATE TABLE cargo (
@@ -56,7 +56,7 @@ CREATE TABLE cargo (
 
 
 -- =========================================================
--- TABELA: RESPONSAVEL
+-- TABELA: responsavel
 -- =========================================================
 
 CREATE TABLE responsavel (
@@ -70,7 +70,7 @@ CREATE TABLE responsavel (
 
 
 -- =========================================================
--- TABELA: USUARIO
+-- TABELA: usuario
 -- =========================================================
 
 CREATE TABLE usuario (
@@ -91,7 +91,7 @@ CREATE TABLE usuario (
 
 
 -- =========================================================
--- TABELA: ALUNO
+-- TABELA: aluno
 -- =========================================================
 
 CREATE TABLE aluno (
@@ -114,7 +114,7 @@ CREATE TABLE aluno (
 
 
 -- =========================================================
--- TABELA: FUNCIONARIO
+-- TABELA: funcionario
 -- =========================================================
 
 CREATE TABLE funcionario (
@@ -140,7 +140,7 @@ CREATE TABLE funcionario (
 
 
 -- =========================================================
--- TABELA: TREINO
+-- TABELA: treino
 -- =========================================================
 
 CREATE TABLE treino (
@@ -163,7 +163,7 @@ CREATE TABLE treino (
 
 
 -- =========================================================
--- TABELA: PAGAMENTO
+-- TABELA: pagamento
 -- =========================================================
 
 CREATE TABLE pagamento (
@@ -184,31 +184,24 @@ CREATE TABLE pagamento (
 -- ÍNDICES
 -- =========================================================
 
--- Facilita pesquisas de alunos por situação
 CREATE INDEX idx_aluno_status
     ON aluno(status_matricula);
 
--- Facilita consultas de pagamentos de um aluno por data
 CREATE INDEX idx_pagamento_aluno_data
     ON pagamento(id_aluno, data_pagamento);
 
--- Facilita consultas de pagamentos por status
 CREATE INDEX idx_pagamento_status
     ON pagamento(status);
 
--- Facilita encontrar treinos de um aluno
 CREATE INDEX idx_treino_aluno
     ON treino(id_aluno);
 
--- Facilita encontrar treinos de um professor
 CREATE INDEX idx_treino_professor
     ON treino(id_professor);
 
--- Facilita pesquisas de funcionários por cargo
 CREATE INDEX idx_funcionario_cargo
     ON funcionario(id_cargo);
 
--- Facilita pesquisas de usuários por nome
 CREATE INDEX idx_usuario_nome
     ON usuario(nome);
 
@@ -219,12 +212,6 @@ CREATE INDEX idx_usuario_nome
 
 DELIMITER $$
 
-
--- ---------------------------------------------------------
--- TRIGGER 1
--- Atualiza automaticamente a data de alteração do treino
--- ---------------------------------------------------------
-
 CREATE TRIGGER trg_treino_atualizacao
 BEFORE UPDATE ON treino
 FOR EACH ROW
@@ -232,11 +219,6 @@ BEGIN
     SET NEW.data_atualizacao = CURRENT_DATE;
 END$$
 
-
--- ---------------------------------------------------------
--- TRIGGER 2
--- Impede pagamento com valor inválido
--- ---------------------------------------------------------
 
 CREATE TRIGGER trg_pagamento_valor
 BEFORE INSERT ON pagamento
@@ -249,11 +231,6 @@ BEGIN
 END$$
 
 
--- ---------------------------------------------------------
--- TRIGGER 3
--- Impede salário/valor hora negativo
--- ---------------------------------------------------------
-
 CREATE TRIGGER trg_funcionario_valor_hora
 BEFORE INSERT ON funcionario
 FOR EACH ROW
@@ -264,7 +241,6 @@ BEGIN
     END IF;
 END$$
 
-
 DELIMITER ;
 
 
@@ -274,19 +250,12 @@ DELIMITER ;
 
 DELIMITER $$
 
-
--- ---------------------------------------------------------
--- PROCEDURE 1
--- Cadastra um pagamento
--- ---------------------------------------------------------
-
 CREATE PROCEDURE sp_registrar_pagamento (
     IN p_id_aluno INT,
     IN p_forma_pagamento VARCHAR(50),
     IN p_valor DECIMAL(10,2)
 )
 BEGIN
-
     INSERT INTO pagamento (
         id_aluno,
         forma_pagamento,
@@ -299,20 +268,13 @@ BEGIN
         p_valor,
         'Pago'
     );
-
 END$$
 
-
--- ---------------------------------------------------------
--- PROCEDURE 2
--- Consulta os pagamentos de um aluno
--- ---------------------------------------------------------
 
 CREATE PROCEDURE sp_consultar_pagamentos_aluno (
     IN p_id_aluno INT
 )
 BEGIN
-
     SELECT
         p.id_pagamento,
         p.forma_pagamento,
@@ -322,20 +284,13 @@ BEGIN
     FROM pagamento p
     WHERE p.id_aluno = p_id_aluno
     ORDER BY p.data_pagamento DESC;
-
 END$$
 
-
--- ---------------------------------------------------------
--- PROCEDURE 3
--- Consulta os treinos ativos de um aluno
--- ---------------------------------------------------------
 
 CREATE PROCEDURE sp_consultar_treinos_aluno (
     IN p_id_aluno INT
 )
 BEGIN
-
     SELECT
         t.id_treino,
         t.nome_treino,
@@ -344,19 +299,250 @@ BEGIN
         t.status,
         u.nome AS professor
     FROM treino t
-
     INNER JOIN funcionario f
         ON f.id_funcionario = t.id_professor
-
     INNER JOIN usuario u
         ON u.id_usuario = f.id_usuario
-
     WHERE t.id_aluno = p_id_aluno
       AND t.status = 'Ativo'
-
     ORDER BY t.data_criacao DESC;
-
 END$$
 
-
 DELIMITER ;
+
+
+-- =========================================================
+-- VIEWS
+-- =========================================================
+
+
+-- =========================================================
+-- VIEW_FUNC_01
+-- Funcionários públicos
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_funcionarios_publico AS
+SELECT
+    f.id_funcionario,
+    u.nome,
+    u.email,
+    c.nome_cargo,
+    c.status AS status_cargo
+FROM funcionario f
+INNER JOIN usuario u
+    ON u.id_usuario = f.id_usuario
+INNER JOIN cargo c
+    ON c.id_cargo = f.id_cargo;
+
+
+-- =========================================================
+-- VIEW_FUNC_02
+-- Funcionários e cargos
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_funcionarios_cargos AS
+SELECT
+    f.id_funcionario,
+    u.nome,
+    u.email,
+    c.nome_cargo,
+    c.salario_base,
+    f.valor_hora,
+    c.status
+FROM funcionario f
+INNER JOIN usuario u
+    ON u.id_usuario = f.id_usuario
+INNER JOIN cargo c
+    ON c.id_cargo = f.id_cargo;
+
+
+-- =========================================================
+-- VIEW_FUNC_03
+-- Funcionários e responsáveis
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_funcionarios_responsaveis AS
+SELECT
+    f.id_funcionario,
+    u.nome AS nome_funcionario,
+    r.nome AS nome_responsavel,
+    r.telefone AS telefone_responsavel,
+    r.email AS email_responsavel
+FROM funcionario f
+INNER JOIN usuario u
+    ON u.id_usuario = f.id_usuario
+INNER JOIN responsavel r
+    ON r.id_responsavel = f.id_responsavel;
+
+
+-- =========================================================
+-- VIEW_ALUNO_01
+-- Histórico financeiro dos alunos
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_aluno_financeiro AS
+SELECT
+    a.id_aluno,
+    u.nome AS nome_aluno,
+    p.id_pagamento,
+    p.forma_pagamento,
+    p.valor,
+    p.data_pagamento,
+    p.status
+FROM pagamento p
+INNER JOIN aluno a
+    ON a.id_aluno = p.id_aluno
+INNER JOIN usuario u
+    ON u.id_usuario = a.id_usuario;
+
+
+-- =========================================================
+-- VIEW_ALUNO_02
+-- Fichas de treino dos alunos
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_aluno_fichas_treino AS
+SELECT
+    t.id_treino,
+    t.id_aluno,
+    u_aluno.nome AS nome_aluno,
+    t.nome_treino,
+    t.data_criacao,
+    t.data_atualizacao,
+    t.status,
+    t.id_professor,
+    u_professor.nome AS nome_professor
+FROM treino t
+INNER JOIN aluno a
+    ON a.id_aluno = t.id_aluno
+INNER JOIN usuario u_aluno
+    ON u_aluno.id_usuario = a.id_usuario
+INNER JOIN funcionario f
+    ON f.id_funcionario = t.id_professor
+INNER JOIN usuario u_professor
+    ON u_professor.id_usuario = f.id_usuario;
+
+
+-- =========================================================
+-- VIEW_ALUNO_03
+-- Alunos e responsáveis
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_alunos_responsaveis AS
+SELECT
+    a.id_aluno,
+    u.nome AS nome_aluno,
+    u.data_nascimento,
+    a.status_matricula,
+    r.nome AS nome_responsavel,
+    r.telefone AS telefone_responsavel,
+    r.email AS email_responsavel
+FROM aluno a
+INNER JOIN usuario u
+    ON u.id_usuario = a.id_usuario
+INNER JOIN responsavel r
+    ON r.id_responsavel = a.id_responsavel;
+
+
+-- =========================================================
+-- VIEW_ACAD_01
+-- Dashboard financeiro
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_dashboard_financeiro AS
+SELECT
+    p.id_pagamento,
+    p.id_aluno,
+    u.nome AS nome_aluno,
+    p.valor,
+    p.forma_pagamento,
+    p.data_pagamento,
+    p.status
+FROM pagamento p
+INNER JOIN aluno a
+    ON a.id_aluno = p.id_aluno
+INNER JOIN usuario u
+    ON u.id_usuario = a.id_usuario;
+
+
+-- =========================================================
+-- VIEW_ACAD_02
+-- Busca de usuários
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_busca_usuarios AS
+SELECT
+    u.id_usuario,
+    u.nome,
+    u.email,
+
+    CASE
+        WHEN a.id_aluno IS NOT NULL THEN 1
+        ELSE 0
+    END AS tipo_aluno,
+
+    CASE
+        WHEN f.id_funcionario IS NOT NULL THEN 1
+        ELSE 0
+    END AS tipo_funcionario,
+
+    a.status_matricula
+
+FROM usuario u
+
+LEFT JOIN aluno a
+    ON a.id_usuario = u.id_usuario
+
+LEFT JOIN funcionario f
+    ON f.id_usuario = u.id_usuario;
+
+
+-- =========================================================
+-- VIEW_ACAD_03
+-- Treinos e professores
+-- =========================================================
+
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_treinos_professores AS
+SELECT
+    t.id_treino,
+    t.nome_treino,
+    u_aluno.nome AS nome_aluno,
+    u_professor.nome AS nome_professor,
+    t.data_criacao,
+    t.data_atualizacao,
+    t.status
+FROM treino t
+INNER JOIN aluno a
+    ON a.id_aluno = t.id_aluno
+INNER JOIN usuario u_aluno
+    ON u_aluno.id_usuario = a.id_usuario
+INNER JOIN funcionario f
+    ON f.id_funcionario = t.id_professor
+INNER JOIN usuario u_professor
+    ON u_professor.id_usuario = f.id_usuario;
+
+
+-- =========================================================
+-- VERIFICAÇÃO DAS VIEWS
+-- =========================================================
+
+SHOW FULL TABLES
+WHERE TABLE_TYPE = 'VIEW';
