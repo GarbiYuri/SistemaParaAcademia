@@ -62,8 +62,7 @@ CREATE TABLE cargo (
 CREATE TABLE responsavel (
     id_responsavel INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
-    cpf VARCHAR(14) NOT NULL,
-    cpf_hash CHAR(64) UNIQUE NOT NULL,
+    cpf VARCHAR(255) NOT NULL,
     telefone VARCHAR(20),
     email VARCHAR(100)
 );
@@ -77,8 +76,7 @@ CREATE TABLE usuario (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     id_endereco INT,
     nome VARCHAR(150) NOT NULL,
-    cpf VARCHAR(14) NOT NULL,
-    cpf_hash CHAR(64) UNIQUE NOT NULL,
+    cpf VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     data_nascimento DATE NOT NULL,
@@ -122,7 +120,7 @@ CREATE TABLE funcionario (
     id_usuario INT UNIQUE NOT NULL,
     id_cargo INT NOT NULL,
     id_responsavel INT NULL,
-    valor_hora DECIMAL(10,2) NOT NULL,
+    valor_hora DECIMAL(10,2),
 
     CONSTRAINT fk_funcionario_usuario
         FOREIGN KEY (id_usuario)
@@ -161,6 +159,25 @@ CREATE TABLE treino (
         REFERENCES funcionario(id_funcionario)
 );
 
+
+-- =========================================================
+-- TABELA: exercicio
+-- =========================================================
+
+CREATE TABLE exercicio (
+    id_exercicio INT AUTO_INCREMENT PRIMARY KEY,
+    id_treino INT NOT NULL,
+    nome_exercicio VARCHAR(100) NOT NULL,
+    series INT NOT NULL DEFAULT 3,
+    repeticoes VARCHAR(50) NOT NULL,
+    carga VARCHAR(20) NULL,
+    observacao VARCHAR(255) NULL,
+
+    CONSTRAINT fk_exercicio_treino
+        FOREIGN KEY (id_treino)
+        REFERENCES treino(id_treino)
+        ON DELETE CASCADE
+);
 
 -- =========================================================
 -- TABELA: pagamento
@@ -205,6 +222,8 @@ CREATE INDEX idx_funcionario_cargo
 CREATE INDEX idx_usuario_nome
     ON usuario(nome);
 
+CREATE INDEX idx_exercicio_treino
+    ON exercicio(id_treino);
 
 -- =========================================================
 -- TRIGGERS
@@ -315,6 +334,26 @@ DELIMITER ;
 -- VIEWS
 -- =========================================================
 
+CREATE OR REPLACE
+SQL SECURITY INVOKER
+VIEW vw_exercicios_detalhados AS
+SELECT
+    e.id_exercicio,
+    e.nome_exercicio,
+    e.series,
+    e.repeticoes,
+    e.carga,
+    e.observacao,
+    t.id_treino,
+    t.nome_treino,
+    u.nome AS nome_aluno
+FROM exercicio e
+INNER JOIN treino t
+    ON t.id_treino = e.id_treino
+INNER JOIN aluno a
+    ON a.id_aluno = t.id_aluno
+INNER JOIN usuario u
+    ON u.id_usuario = a.id_usuario;
 
 -- =========================================================
 -- VIEW_FUNC_01
