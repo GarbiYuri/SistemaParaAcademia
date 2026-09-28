@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Cargo</title>
+</head>
+<body>
+    <h1>Editar Cargo</h1>
+
+    <form id="formEditarCargo">
+        <input type="hidden" id="id_cargo">
+
+        <label for="nome">Nome</label>
+        <input type="text" id="nome" required>
+
+        <label for="salario">Salário Base</label>
+        <input type="number" step="0.01" id="salario" required>
+
+        <label for="status">Status</label>
+        <select id="status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+        </select>
+
+        <button type="submit">Atualizar</button>
+    </form>
+
+    <div id="mensagem"></div>
+    <a href="/">Tela Inicial</a>
+
+    <script src="../../../js/cargo.js"></script>
+</body>
+</html>

@@ -22,6 +22,7 @@ import repository.exercicio
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
+Style = FRONTEND_DIR / "styles"
 
 app = FastAPI(
     title="FATEC Academia - API REST Profissional",
@@ -37,16 +38,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount(
-    "/frontend",
-    StaticFiles(directory=FRONTEND_DIR),
-    name="frontend"
-)
 
 # ==========================================
 # ROTAS PÁGINAS ESTÁTICAS
 # ==========================================
-
 @app.get("/", include_in_schema=False)
 def pagina_inicial():
     return FileResponse(FRONTEND_DIR / "index.html")
@@ -948,3 +943,10 @@ def excluir_exercicio(id: int):
             detail=f"Exercício com ID {id} não encontrado para exclusão."
         )
     return {"mensagem": "Exercício excluído com sucesso", "id": id}
+
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_DIR, html=True),
+    name="frontend"
+)
+app.mount("/styles", StaticFiles(directory=Style), name="style")
