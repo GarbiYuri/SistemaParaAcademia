@@ -223,3 +223,31 @@ SistemaParaAcademia/.venv/
 SistemaParaAcademia/.env
 SistemaParaAcademia/__pycache__/
 SistemaParaAcademia/*.pyc
+
+# -------------------------- FRONTEND --------------------------------
+
+# Logs
+SistemaParaAcademia/frontend/logs
+SistemaParaAcademia/frontend/*.log
+SistemaParaAcademia/frontend/npm-debug.log*
+SistemaParaAcademia/frontend/yarn-debug.log*
+SistemaParaAcademia/frontend/yarn-error.log*
+SistemaParaAcademia/frontend/pnpm-debug.log*
+SistemaParaAcademia/frontend/lerna-debug.log*
+
+SistemaParaAcademia/frontend/node_modules
+SistemaParaAcademia/frontend/dist
+SistemaParaAcademia/frontend/dist-ssr
+SistemaParaAcademia/frontend/*.local
+
+# Editor directories and files
+SistemaParaAcademia/frontend/.vscode/*
+SistemaParaAcademia/frontend/!.vscode/extensions.json
+SistemaParaAcademia/frontend/.idea
+SistemaParaAcademia/frontend/.DS_Store
+SistemaParaAcademia/frontend/*.suo
+SistemaParaAcademia/frontend/*.ntvs*
+SistemaParaAcademia/frontend/*.njsproj
+SistemaParaAcademia/frontend/*.sln
+SistemaParaAcademia/frontend/*.sw?
+
