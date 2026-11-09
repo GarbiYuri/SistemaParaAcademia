@@ -37,6 +37,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:-academia_dev_password}
       FERNET_KEY: ${FERNET_KEY:-_bXEShCF3XG-P1HemSD8NFwOeecaBzOIfsjCJ_gt6EU=}
       ENABLE_AUTH_API: "true"
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
       API_PORT: "8000"
       AUTH_PORT: "8001"
     ports:

@@ -6,6 +6,9 @@ cd /app/backend
 API_PORT="${API_PORT:-8000}"
 AUTH_PORT="${AUTH_PORT:-8001}"
 
+echo "Verificando contas de demonstração..."
+python seed_demo.py || echo "Aviso: não foi possível criar/verificar as contas de demonstração."
+
 pids=()
 
 cleanup() {
