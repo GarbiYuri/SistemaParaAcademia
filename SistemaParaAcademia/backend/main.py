@@ -42,13 +42,23 @@ app.add_middleware(
 # ==========================================
 # ROTAS PÁGINAS ESTÁTICAS
 # ==========================================
+def _arquivo_frontend(nome: str) -> FileResponse:
+    arquivo = FRONTEND_DIR / nome
+    if not arquivo.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Frontend não disponível neste serviço. Utilize o container do frontend."
+        )
+    return FileResponse(arquivo)
+
+
 @app.get("/", include_in_schema=False)
 def pagina_inicial():
-    return FileResponse(FRONTEND_DIR / "index.html")
+    return _arquivo_frontend("index.html")
 
 @app.get("/dashboard", include_in_schema=False)
 def obter_dashboard():
-    return FileResponse(FRONTEND_DIR / "dashboard.html")
+    return _arquivo_frontend("dashboard.html")
 
 
 # ==========================================
@@ -944,9 +954,12 @@ def excluir_exercicio(id: int):
         )
     return {"mensagem": "Exercício excluído com sucesso", "id": id}
 
-app.mount(
-    "/",
-    StaticFiles(directory=FRONTEND_DIR, html=True),
-    name="frontend"
-)
-app.mount("/styles", StaticFiles(directory=Style), name="style")
+if Style.is_dir():
+    app.mount("/styles", StaticFiles(directory=Style), name="style")
+
+if FRONTEND_DIR.is_dir():
+    app.mount(
+        "/",
+        StaticFiles(directory=FRONTEND_DIR, html=True),
+        name="frontend"
+    )
