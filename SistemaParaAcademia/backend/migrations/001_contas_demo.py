@@ -1,12 +1,11 @@
-"""Cria as contas de demonstração exibidas na tela de login.
+"""Insere as contas de demonstração exibidas na tela de login.
 
-Idempotente: pode rodar a cada inicialização do backend. Para desativar,
-defina a variável de ambiente SEED_DEMO_USERS=false.
+Idempotente: procura por e-mail antes de inserir. Pode ser desativada com a
+variável de ambiente SEED_DEMO_USERS=false (não é marcada como aplicada).
 """
 
 import os
 
-from database import criar_conexao
 from utils.security import criptografar_cpf, gerar_hash_senha
 
 SENHA_DEMO = "senha123"
@@ -47,6 +46,10 @@ CONTAS_DEMO = [
         "data_nascimento": "1994-09-18",
     },
 ]
+
+
+def habilitada() -> bool:
+    return os.getenv("SEED_DEMO_USERS", "true").lower() != "false"
 
 
 def _garantir_endereco(cursor) -> int:
@@ -111,7 +114,9 @@ def _garantir_vinculo(cursor, conta, id_usuario: int) -> None:
             )
         return
 
-    cursor.execute("SELECT id_funcionario FROM funcionario WHERE id_usuario = %s", (id_usuario,))
+    cursor.execute(
+        "SELECT id_funcionario FROM funcionario WHERE id_usuario = %s", (id_usuario,)
+    )
     if not cursor.fetchone():
         id_cargo = _garantir_cargo(cursor, conta["cargo"])
         cursor.execute(
@@ -120,36 +125,9 @@ def _garantir_vinculo(cursor, conta, id_usuario: int) -> None:
         )
 
 
-def main() -> None:
-    if os.getenv("SEED_DEMO_USERS", "true").lower() == "false":
-        print("SEED_DEMO_USERS=false: contas de demonstração não serão criadas.")
-        return
+def up(cursor) -> None:
+    id_endereco = _garantir_endereco(cursor)
 
-    conexao = criar_conexao()
-    cursor = conexao.cursor()
-
-    criadas = 0
-    try:
-        id_endereco = _garantir_endereco(cursor)
-
-        for conta in CONTAS_DEMO:
-            cursor.execute("SELECT id_usuario FROM usuario WHERE email = %s", (conta["email"],))
-            existe = cursor.fetchone()
-            id_usuario = _garantir_usuario(cursor, conta, id_endereco)
-            _garantir_vinculo(cursor, conta, id_usuario)
-            if not existe:
-                criadas += 1
-
-        conexao.commit()
-    finally:
-        cursor.close()
-        conexao.close()
-
-    if criadas:
-        print(f"Contas de demonstração criadas: {criadas}")
-    else:
-        print("Contas de demonstração já existem.")
-
-
-if __name__ == "__main__":
-    main()
+    for conta in CONTAS_DEMO:
+        id_usuario = _garantir_usuario(cursor, conta, id_endereco)
+        _garantir_vinculo(cursor, conta, id_usuario)
