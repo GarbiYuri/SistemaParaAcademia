@@ -36,13 +36,15 @@ services:
       DB_USER: ${MYSQL_USER:-academia}
       DB_PASSWORD: ${MYSQL_PASSWORD:-academia_dev_password}
       FERNET_KEY: ${FERNET_KEY:-_bXEShCF3XG-P1HemSD8NFwOeecaBzOIfsjCJ_gt6EU=}
+      AUTH_SECRET: ${AUTH_SECRET:?defina AUTH_SECRET no .env}
+      AUTH_TOKEN_TTL: ${AUTH_TOKEN_TTL:-43200}
       ENABLE_AUTH_API: "true"
-      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-false}
       API_PORT: "8000"
       AUTH_PORT: "8001"
-    ports:
-      - "8000:8000"
-      - "8001:8001"
+    expose:
+      - "8000"
+      - "8001"
     networks:
       - app_net
     depends_on:
@@ -53,7 +55,7 @@ services:
         - CMD
         - python
         - -c
-        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/docs', timeout=3).getcode() == 200 else 1)"
+        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).getcode() == 200 else 1)"
       interval: 30s
       timeout: 5s
       retries: 3
@@ -67,7 +69,7 @@ services:
     container_name: SistemaAcademiaFrontEnd
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "127.0.0.1:8088:80"
     networks:
       - app_net
     depends_on:

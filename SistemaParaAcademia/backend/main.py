@@ -1,13 +1,14 @@
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from mysql.connector import IntegrityError, Error as MySQLError
 
 from database import criar_conexao
+from utils.auth_token import validar_token
 import schema
 import repository.dadosAcademia
 import repository.endereco
@@ -27,16 +28,66 @@ Style = FRONTEND_DIR / "styles"
 app = FastAPI(
     title="FATEC Academia - API REST Profissional",
     description="Backend completo com integração direta MySQL e arquitetura modular por Repositories",
-    version="2.0.0"
+    version="2.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
+
+ORIGENS_PERMITIDAS = [
+    "https://academia.franciscovps.shop",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8088",
+    "http://192.168.15.5:8088",
+]
+
+
+# Rotas que não exigem token (páginas estáticas e healthcheck).
+ROTAS_PUBLICAS = {"/", "/dashboard", "/health", "/favicon.ico"}
+ROTAS_PUBLICAS_PREFIXO = ("/styles/",)
+
+# Perfis que podem alterar dados. "aluno" é somente leitura.
+PERFIS_ESCRITA = {"administrador", "recepcionista", "professor"}
+
+
+@app.middleware("http")
+async def exigir_autenticacao(request: Request, call_next):
+    caminho = request.url.path
+    if request.method == "OPTIONS" or caminho in ROTAS_PUBLICAS:
+        return await call_next(request)
+    if any(caminho.startswith(prefixo) for prefixo in ROTAS_PUBLICAS_PREFIXO):
+        return await call_next(request)
+
+    cabecalho = request.headers.get("authorization", "")
+    token = cabecalho[7:].strip() if cabecalho.lower().startswith("bearer ") else ""
+    dados = validar_token(token) if token else None
+    if dados is None:
+        return JSONResponse({"detail": "Não autenticado."}, status_code=401)
+
+    if request.method not in ("GET", "HEAD"):
+        perfis = set(dados.get("perfis") or [])
+        if not perfis & PERFIS_ESCRITA:
+            return JSONResponse(
+                {"detail": "Seu perfil não permite alterar dados."},
+                status_code=403,
+            )
+
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ORIGENS_PERMITIDAS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+
+@app.get("/health", include_in_schema=False)
+def health():
+    return {"status": "ok"}
 
 
 # ==========================================

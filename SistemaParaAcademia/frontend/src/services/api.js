@@ -1,11 +1,38 @@
 const BASE = '/api'
+const CHAVE_SESSAO = 'fatecfit.portal.sessao'
+
+function tokenAtual() {
+  try {
+    const bruto = window.localStorage.getItem(CHAVE_SESSAO)
+    return bruto ? JSON.parse(bruto)?.token || null : null
+  } catch {
+    return null
+  }
+}
+
+function encerrarSessao() {
+  window.localStorage.removeItem(CHAVE_SESSAO)
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login')
+  }
+}
 
 async function request(path, { method = 'GET', body } = {}) {
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  const token = tokenAtual()
+  if (token) headers.Authorization = `Bearer ${token}`
+
   const res = await fetch(BASE + path, {
     method,
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
+
+  if (res.status === 401) {
+    encerrarSessao()
+    throw new Error('Sessão expirada. Faça login novamente.')
+  }
 
   if (!res.ok) {
     let message = `Erro ${res.status}`
