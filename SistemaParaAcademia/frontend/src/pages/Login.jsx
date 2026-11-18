@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BriefcaseBusiness,
-  ChevronDown,
   ClipboardList,
   Dumbbell,
   Eye,
@@ -18,37 +17,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { destinoPorPerfil } from '../components/PortalGuard.jsx'
-
-const CONTAS_DEMO = [
-  {
-    perfil: 'Aluno',
-    nome: 'Ana Beatriz Souza',
-    email: 'ana.souza@email.com',
-    senha: 'senha123',
-    tom: 'info',
-  },
-  {
-    perfil: 'Professor',
-    nome: 'Marcos Vinícius Almeida',
-    email: 'marcos.almeida@fatecfit.com',
-    senha: 'senha123',
-    tom: 'green',
-  },
-  {
-    perfil: 'Administrador',
-    nome: 'Roberto Nunes Filho',
-    email: 'roberto.nunes@fatecfit.com',
-    senha: 'senha123',
-    tom: 'amber',
-  },
-  {
-    perfil: 'Recepcionista',
-    nome: 'Juliana Prado Nunes',
-    email: 'juliana.nunes@fatecfit.com',
-    senha: 'senha123',
-    tom: 'info',
-  },
-]
 
 const OPCOES_PERFIL = {
   aluno: {
@@ -87,7 +55,6 @@ export default function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [mostrarDemo, setMostrarDemo] = useState(false)
   const [escolha, setEscolha] = useState(null)
 
   if (sessao) {
@@ -140,12 +107,6 @@ export default function Login() {
     } finally {
       setEnviando(false)
     }
-  }
-
-  const preencher = (conta) => {
-    setEmail(conta.email)
-    setSenha(conta.senha)
-    setErro('')
   }
 
   const voltar = () => {
@@ -336,45 +297,6 @@ export default function Login() {
                 {!enviando && <ArrowRight size={16} />}
               </button>
             </form>
-
-            <div className="login-demo">
-              <button
-                type="button"
-                className={`login-demo-toggle ${mostrarDemo ? 'open' : ''}`}
-                onClick={() => setMostrarDemo((v) => !v)}
-                aria-expanded={mostrarDemo}
-              >
-                <span>
-                  <Sparkles size={14} /> Contas de demonstração
-                </span>
-                <ChevronDown size={15} />
-              </button>
-
-              {mostrarDemo && (
-                <div className="login-demo-list">
-                  {CONTAS_DEMO.map((conta) => (
-                    <button
-                      type="button"
-                      key={conta.email}
-                      className="login-demo-item"
-                      onClick={() => preencher(conta)}
-                      title="Preencher este login"
-                    >
-                      <span className={`badge badge-${conta.tom}`}>{conta.perfil}</span>
-                      <span className="login-demo-text">
-                        <strong>{conta.nome}</strong>
-                        <small>{conta.email}</small>
-                      </span>
-                      <span className="login-demo-senha">senha123</span>
-                    </button>
-                  ))}
-                  <p className="login-demo-hint">
-                    Alunos, professores e equipe administrativa usam este mesmo login. Quem tem
-                    mais de um perfil escolhe a área após entrar.
-                  </p>
-                </div>
-              )}
-            </div>
 
             <footer className="login-footer">
               <span>Equipe administrativa?</span>
