@@ -171,15 +171,14 @@ def delete(id: int):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
-    cursor.execute("""
-        DELETE FROM pagamento
-        WHERE id_pagamento = %s
-    """, (id,))
+    try:
+        cursor.execute("""
+            DELETE FROM pagamento
+            WHERE id_pagamento = %s
+        """, (id,))
 
-    conexao.commit()
-    linhas_excluidas = cursor.rowcount
-
-    cursor.close()
-    conexao.close()
-
-    return linhas_excluidas
+        conexao.commit()
+        return cursor.rowcount
+    finally:
+        cursor.close()
+        conexao.close()

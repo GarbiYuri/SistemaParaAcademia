@@ -245,17 +245,21 @@ export default function Usuarios() {
             <Input type="email" value={form.email} onChange={set('email')} placeholder="pessoa@email.com" required />
           </Field>
           <Field
-            label={editando ? 'Nova senha' : 'Senha'}
-            required
-            hint={editando ? 'A senha é re-hashada a cada salvamento.' : 'Mínimo de 4 caracteres.'}
+            label={editando ? 'Nova senha (opcional)' : 'Senha'}
+            required={!editando}
+            hint={
+              editando
+                ? 'Deixe em branco para manter a senha atual.'
+                : 'Mínimo de 4 caracteres.'
+            }
           >
             <Input
               type="password"
               value={form.senha}
               onChange={set('senha')}
-              placeholder="••••••••"
-              minLength={4}
-              required
+              placeholder={editando ? '•••••••• (manter)' : '••••••••'}
+              minLength={editando ? 0 : 4}
+              required={!editando}
             />
           </Field>
 

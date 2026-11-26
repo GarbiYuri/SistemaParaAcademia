@@ -263,7 +263,13 @@ def atualizar_endereco(
 
 @app.delete("/enderecos/{id}", tags=["Endereços"])
 def excluir_endereco(id: int):
-    linhas_excluidas = repository.endereco.delete(id)
+    try:
+        linhas_excluidas = repository.endereco.delete(id)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=400,
+            detail="Não é possível remover este endereço pois ele possui vínculos ativos com usuários."
+        )
 
     if linhas_excluidas == 0:
         raise HTTPException(
@@ -323,6 +329,11 @@ def criar_usuario(usuario: schema.model.usuario.UsuarioRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro no banco de dados: {err.msg}"
         )
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err)
+        )
 
 
 @app.put(
@@ -343,6 +354,11 @@ def atualizar_usuario(id: int, usuario: schema.model.usuario.UsuarioRequest):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro de integridade ao atualizar usuário: {err.msg}"
+        )
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err)
         )
 
 

@@ -79,6 +79,9 @@ def create(usuario):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
+    if not usuario.senha:
+        raise ValueError("A senha é obrigatória ao cadastrar um usuário.")
+
     # Aplica hash na senha e encripta o CPF
     senha_hash = gerar_hash_senha(usuario.senha)
     cpf_criptografado = criptografar_cpf(usuario.cpf)
@@ -116,8 +119,9 @@ def update(id: int, usuario):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
-    # Aplica hash na senha e encripta o CPF
-    senha_hash = gerar_hash_senha(usuario.senha)
+    # Aplica hash na senha e encripta o CPF.
+    # Senha vazia ou omitida: mantém a senha atual (COALESCE com NULL).
+    senha_hash = gerar_hash_senha(usuario.senha) if usuario.senha else None
     cpf_criptografado = criptografar_cpf(usuario.cpf)
 
     cursor.execute("""
@@ -127,7 +131,7 @@ def update(id: int, usuario):
             nome = %s,
             cpf = %s,
             email = %s,
-            senha = %s,
+            senha = COALESCE(%s, senha),
             data_nascimento = %s
         WHERE id_usuario = %s
     """, (
@@ -153,15 +157,14 @@ def delete(id: int):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
-    cursor.execute("""
-        DELETE FROM usuario
-        WHERE id_usuario = %s
-    """, (id,))
+    try:
+        cursor.execute("""
+            DELETE FROM usuario
+            WHERE id_usuario = %s
+        """, (id,))
 
-    conexao.commit()
-    linhas_excluidas = cursor.rowcount
-
-    cursor.close()
-    conexao.close()
-
-    return linhas_excluidas
+        conexao.commit()
+        return cursor.rowcount
+    finally:
+        cursor.close()
+        conexao.close()

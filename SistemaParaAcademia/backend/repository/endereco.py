@@ -155,16 +155,16 @@ def delete(id):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
-    cursor.execute("""
-        DELETE FROM endereco
-        WHERE id_endereco = %s
-    """, (id,))
+    try:
+        cursor.execute("""
+            DELETE FROM endereco
+            WHERE id_endereco = %s
+        """, (id,))
 
-    conexao.commit()
-
-    linhas_excluidas = cursor.rowcount
-
-    cursor.close()
-    conexao.close()
-
-    return linhas_excluidas
+        conexao.commit()
+        return cursor.rowcount
+    finally:
+        # Fecha sempre: em caso de IntegrityError (FK), o close faz rollback
+        # e libera os locks em vez de deixar a conexão presa.
+        cursor.close()
+        conexao.close()

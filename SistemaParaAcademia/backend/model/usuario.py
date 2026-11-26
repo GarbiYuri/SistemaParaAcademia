@@ -1,3 +1,5 @@
+from typing import Optional
+
 from schema import date, BaseModel, EmailStr
 
 class UsuarioRequest(BaseModel):
@@ -5,7 +7,9 @@ class UsuarioRequest(BaseModel):
     nome: str
     cpf: str
     email: EmailStr
-    senha: str
+    # Opcional ao atualizar (senha mantida quando vazia/omitida);
+    # obrigatória ao cadastrar.
+    senha: Optional[str] = None
     dataNascimento: date
 
 # Dados retornados pelas rotas da API

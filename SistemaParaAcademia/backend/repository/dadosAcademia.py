@@ -167,16 +167,14 @@ def deletee(id_academia):
     conexao = criar_conexao()
     cursor = conexao.cursor()
 
-    cursor.execute("""
-        DELETE FROM dados_academia
-        WHERE id = %s
-    """, (id_academia,))
+    try:
+        cursor.execute("""
+            DELETE FROM dados_academia
+            WHERE id = %s
+        """, (id_academia,))
 
-    conexao.commit()
-
-    linhas_deletadas = cursor.rowcount
-
-    cursor.close()
-    conexao.close()
-
-    return linhas_deletadas > 0
+        conexao.commit()
+        return cursor.rowcount > 0
+    finally:
+        cursor.close()
+        conexao.close()
